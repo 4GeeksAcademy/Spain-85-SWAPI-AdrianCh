@@ -9,7 +9,7 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User
-#from models import Person
+from sqlalchemy import select
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -36,11 +36,47 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+@app.route('/user/<int:id>', methods=['GET'])
+def get_user(id):
+    try:
+        user = db.session.execute(select(User).filter_by(id=id)).scalar_one()
+        response_body = {
+            "result":user.serialize()
+        }
+        return jsonify(response_body), 200
+    except:
+        return jsonify({"msg":"user not exist"}), 404
+
+@app.route('/user', methods=['POST'])
+def create_user():
+    request_data = request.json
+    print(request_data)
+    user = User(email=request_data["email"], password=request_data["password"])
+    db.session.add(user)
+    db.session.commit()
 
     response_body = {
-        "msg": "Hello, this is your GET /user response "
+        "msg":"user created"
+    }
+    try:
+        return jsonify(response_body), 200
+    except:
+        return jsonify({"msg":"error"}), 404
+
+@app.route('/character', methods=['GET'])
+def get_character():
+
+    response_body = {
+        "msg": "Hello, this is your GET /character response "
+    }
+
+    return jsonify(response_body), 200
+
+@app.route('/planet', methods=['GET'])
+def get_planet():
+
+    response_body = {
+        "msg": "Hello, this is your GET /planet response "
     }
 
     return jsonify(response_body), 200
